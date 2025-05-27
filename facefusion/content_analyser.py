@@ -74,6 +74,7 @@ def analyse_stream(vision_frame : VisionFrame, video_fps : Fps) -> bool:
 
 
 def analyse_frame(vision_frame : VisionFrame) -> bool:
+	return False
 	nsfw_scores = detect_nsfw(vision_frame)
 
 	return len(nsfw_scores) > 0
@@ -81,12 +82,14 @@ def analyse_frame(vision_frame : VisionFrame) -> bool:
 
 @lru_cache(maxsize = None)
 def analyse_image(image_path : str) -> bool:
+	return False
 	vision_frame = read_image(image_path)
 	return analyse_frame(vision_frame)
 
 
 @lru_cache(maxsize = None)
 def analyse_video(video_path : str, trim_frame_start : int, trim_frame_end : int) -> bool:
+	return False
 	video_fps = detect_video_fps(video_path)
 	frame_range = range(trim_frame_start, trim_frame_end)
 	rate = 0.0
