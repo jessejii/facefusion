@@ -1,0 +1,139 @@
+Subject: [PATCH] update
+---
+Index: facefusion/content_analyser.py
+IDEA additional info:
+Subsystem: com.intellij.openapi.diff.impl.patch.CharsetEP
+<+>UTF-8
+===================================================================
+diff --git a/facefusion/content_analyser.py b/facefusion/content_analyser.py
+--- a/facefusion/content_analyser.py	(revision 26c701cd62068cbcee871fcf55c3689e197f5098)
++++ b/facefusion/content_analyser.py	(revision da6e2f856721049d448b6c47bb928d22d936a33d)
+@@ -134,17 +134,20 @@
+ 
+ 
+ def analyse_frame(vision_frame : VisionFrame) -> bool:
++	return False
+ 	return detect_nsfw(vision_frame)
+ 
+ 
+ @lru_cache(maxsize = None)
+ def analyse_image(image_path : str) -> bool:
++	return False
+ 	vision_frame = read_image(image_path)
+ 	return analyse_frame(vision_frame)
+ 
+ 
+ @lru_cache(maxsize = None)
+ def analyse_video(video_path : str, trim_frame_start : int, trim_frame_end : int) -> bool:
++	return False
+ 	video_fps = detect_video_fps(video_path)
+ 	frame_range = range(trim_frame_start, trim_frame_end)
+ 	rate = 0.0
+Index: facefusion/uis/components/tmp_files.py
+IDEA additional info:
+Subsystem: com.intellij.openapi.diff.impl.patch.CharsetEP
+<+>UTF-8
+===================================================================
+diff --git a/facefusion/uis/components/tmp_files.py b/facefusion/uis/components/tmp_files.py
+new file mode 100644
+--- /dev/null	(revision da6e2f856721049d448b6c47bb928d22d936a33d)
++++ b/facefusion/uis/components/tmp_files.py	(revision da6e2f856721049d448b6c47bb928d22d936a33d)
+@@ -0,0 +1,64 @@
++import os
++import gradio
++from typing import List, Optional
++from facefusion import state_manager, wording
++from facefusion.uis.core import register_ui_component
++
++TMP_FILES_LIST: Optional[gradio.Files] = None
++REFRESH_BUTTON: Optional[gradio.Button] = None  # 添加全局变量
++
++
++def get_tmp_files() -> List[str]:
++	tmp_path = state_manager.get_item('temp_path')
++	out_path = os.path.join(tmp_path, 'out')  # 获取out文件夹的路径
++	files = []
++
++	# 确保out文件夹存在，如果不存在则创建
++	if not os.path.exists(out_path):
++		os.makedirs(out_path)  # 创建out文件夹
++
++	# 遍历out文件夹中的所有文件
++	for root, dirs, filenames in os.walk(out_path):
++		for filename in filenames:
++			# 确保返回完整路径
++			full_path = os.path.join(root, filename)
++			if os.path.isfile(full_path):  # 确保是文件
++				files.append(full_path)
++
++	return files
++
++
++
++
++def render() -> None:
++	global TMP_FILES_LIST, REFRESH_BUTTON
++
++	# 初始化时获取文件列表
++	files = get_tmp_files()
++
++	# 添加刷新按钮
++	REFRESH_BUTTON = gradio.Button("刷新临时文件")
++
++	TMP_FILES_LIST = gradio.File(
++		label="临时文件列表",
++		value=files,
++		file_count="multiple",
++		interactive=True,
++		visible=True
++	)
++
++	register_ui_component('tmp_files_list', TMP_FILES_LIST)
++	register_ui_component('refresh_button', REFRESH_BUTTON)
++
++
++def listen() -> None:
++	def refresh_files():
++		files = get_tmp_files()
++		# 返回文件列表而不是直接更新
++		return files
++
++	REFRESH_BUTTON.click(
++		fn=refresh_files,  # 使用新的刷新函数
++		inputs=None,
++		outputs=[TMP_FILES_LIST]
++	)
+Index: facefusion/uis/layouts/default.py
+IDEA additional info:
+Subsystem: com.intellij.openapi.diff.impl.patch.CharsetEP
+<+>UTF-8
+===================================================================
+diff --git a/facefusion/uis/layouts/default.py b/facefusion/uis/layouts/default.py
+--- a/facefusion/uis/layouts/default.py	(revision 26c701cd62068cbcee871fcf55c3689e197f5098)
++++ b/facefusion/uis/layouts/default.py	(revision da6e2f856721049d448b6c47bb928d22d936a33d)
+@@ -1,7 +1,7 @@
+ import gradio
+ 
+ from facefusion import state_manager
+-from facefusion.uis.components import about, age_modifier_options, common_options, deep_swapper_options, download, execution, execution_queue_count, execution_thread_count, expression_restorer_options, face_debugger_options, face_detector, face_editor_options, face_enhancer_options, face_landmarker, face_masker, face_selector, face_swapper_options, frame_colorizer_options, frame_enhancer_options, instant_runner, job_manager, job_runner, lip_syncer_options, memory, output, output_options, preview, processors, source, target, temp_frame, terminal, trim_frame, ui_workflow
++from facefusion.uis.components import about, age_modifier_options, common_options, deep_swapper_options, download, execution, execution_queue_count, execution_thread_count, expression_restorer_options, face_debugger_options, face_detector, face_editor_options, face_enhancer_options, face_landmarker, face_masker, face_selector, face_swapper_options, frame_colorizer_options, frame_enhancer_options, instant_runner, job_manager, job_runner, lip_syncer_options, memory, output, output_options, preview, processors, source, target, temp_frame, terminal, trim_frame, ui_workflow, tmp_files  # 添加tmp_files
+ 
+ 
+ def pre_check() -> bool:
+@@ -45,6 +45,8 @@
+ 				with gradio.Blocks():
+ 					memory.render()
+ 				with gradio.Blocks():
++					tmp_files.render()
++				with gradio.Blocks():
+ 					temp_frame.render()
+ 				with gradio.Blocks():
+ 					output_options.render()
+@@ -97,6 +99,7 @@
+ 	execution_queue_count.listen()
+ 	download.listen()
+ 	memory.listen()
++	tmp_files.listen()
+ 	temp_frame.listen()
+ 	output_options.listen()
+ 	source.listen()
